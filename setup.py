@@ -1,3 +1,5 @@
+"""Setup configuration for the Cortex package."""
+
 from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -26,6 +28,16 @@ setup(
     entry_points={
         "console_scripts": [
             "cortex=cortex.agent:main",
+        ],
+    },
+    extras_require={
+        "dev": [
+            "pytest==8.0.0",
+            "black==24.1.1",
+            "isort==5.13.2",
+            "flake8==7.0.0",
+            "flake8-docstrings==1.7.0",
+            "pre-commit==3.5.0",
         ],
     },
 )

@@ -1,48 +1,55 @@
-"""Cortex Agent - Main agent implementation for project scaffolding"""
+"""Cortex Agent - Main agent implementation for project scaffolding."""
 
-import asyncio
-import json
-import logging
 import os
-import pathlib
-from typing import Any, Dict, Optional
-
+import asyncio
+import logging
 import aiohttp
+import json
+import pathlib
+from typing import Dict, Optional, Any
 
-from cortex.utils import clean_content, clean_path
+from cortex.utils import clean_path, clean_content
 
 # Configure enhanced logging
 logging.basicConfig(
     level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s: %(message)s",
-    handlers=[logging.StreamHandler()],
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
 )
 
-
-# Load environment variables from .env file if it exists
-def load_env_file(file_path: str = ".env") -> Dict[str, str]:
-    """Load environment variables from file"""
+def load_env_file(file_path: str = '.env') -> Dict[str, str]:
+    """Load environment variables from file.
+    
+    Args:
+        file_path: Path to the .env file
+        
+    Returns:
+        Dictionary of environment variables
+    """
     env_vars = {}
-
+    
     env_path = pathlib.Path(file_path)
     if not env_path.exists():
-        logging.info(f"{file_path} not found, using defaults and environment variables")
+        logging.info(
+            f"{file_path} not found, using defaults and environment variables"
+        )
         return env_vars
-
+    
     try:
-        with open(env_path, "r") as f:
+        with open(env_path, 'r') as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith("#"):
+                if not line or line.startswith('#'):
                     continue
-
+                    
                 try:
-                    key, value = line.split("=", 1)
+                    key, value = line.split('=', 1)
                     env_vars[key.strip()] = value.strip()
                 except ValueError:
-                    # Skip lines that don't have the expected format
                     logging.warning(f"Skipping invalid line in .env file: {line}")
-
+        
         logging.info(f"Loaded configuration from {file_path}")
         return env_vars
     except Exception as e:
@@ -184,33 +191,55 @@ else:
 
 # MCP client class
 class MCPClient:
+    """Client for interacting with the Model Context Protocol API."""
+
     def __init__(
         self,
-        model,
-        api_url=MCP_API_URL,
-        api_key=MCP_API_KEY,
-        temperature=MCP_TEMPERATURE,
-        max_tokens=MCP_MAX_TOKENS,
-        timeout=MCP_TIMEOUT,
+        model: str,
+        api_url: str = MCP_API_URL,
+        api_key: str = MCP_API_KEY,
+        temperature: float = MCP_TEMPERATURE,
+        max_tokens: int = MCP_MAX_TOKENS,
+        timeout: int = MCP_TIMEOUT
     ):
+        """Initialize the MCP client.
+        
+        Args:
+            model: The model to use
+            api_url: The API URL
+            api_key: The API key
+            temperature: The temperature setting
+            max_tokens: Maximum tokens to generate
+            timeout: Request timeout in seconds
+        """
         self.model = model
         self.api_url = api_url
         self.api_key = api_key
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
-        self.headers = {"Content-Type": "application/json"}
+        self.headers = {
+            "Content-Type": "application/json"
+        }
         if api_key:
             self.headers["Authorization"] = f"Bearer {api_key}"
         self.using_context7 = CONTEXT7_ENABLED
         self.context7_libs = []
         if self.using_context7 and CONTEXT7_LIBS:
             self.context7_libs = [
-                lib.strip() for lib in CONTEXT7_LIBS.split(",") if lib.strip()
+                lib.strip() for lib in CONTEXT7_LIBS.split(',') if lib.strip()
             ]
             print(f"Context7 libraries: {', '.join(self.context7_libs)}")
 
-    async def create(self, messages):
+    async def create(self, messages: list) -> Any:
+        """Create a completion using the MCP API.
+        
+        Args:
+            messages: List of messages to send to the API
+            
+        Returns:
+            The API response
+        """
         timeout = aiohttp.ClientTimeout(total=self.timeout)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             formatted_messages = []
@@ -219,12 +248,14 @@ class MCPClient:
                     role = msg.role
                 else:
                     role = (
-                        "system"
-                        if getattr(msg, "__class__", None)
+                        "system" if getattr(msg, "__class__", None)
                         and msg.__class__.__name__ == "SystemMessage"
                         else "user"
                     )
-                formatted_messages.append({"role": role, "content": msg.content})
+                formatted_messages.append({
+                    "role": role,
+                    "content": msg.content
+                })
             self.is_ollama = "ollama" in self.api_url.lower() or "11434" in self.api_url
             if self.is_ollama:
                 payload = {
@@ -440,12 +471,27 @@ if __name__ == "__main__":
 
     # Define message classes compatible with MCP
     class SystemMessage:
-        def __init__(self, content):
+        """System message for the MCP API."""
+
+        def __init__(self, content: str):
+            """Initialize a system message.
+            
+            Args:
+                content: The message content
+            """
             self.content = content
             self.__class__.__name__ = "SystemMessage"
 
     class UserMessage:
-        def __init__(self, content, source=None):
+        """User message for the MCP API."""
+
+        def __init__(self, content: str, source: Optional[str] = None):
+            """Initialize a user message.
+            
+            Args:
+                content: The message content
+                source: Optional source of the message
+            """
             self.content = content
             self.source = source
             self.__class__.__name__ = "UserMessage"
@@ -547,6 +593,7 @@ if __name__ == "__main__":
     # DEBUG is now set from configuration
 
     def debug_print(*args, **kwargs):
+        """Print debug messages if debug mode is enabled."""
         if DEBUG:
             print("[DEBUG]", *args, **kwargs)
 
@@ -555,117 +602,118 @@ if __name__ == "__main__":
 
     # Attempt to load JSON; if assistant included extra text or markdown, extract JSON object
     def extract_json(s: str) -> str:
+        """Extract JSON from a string.
+        
+        Args:
+            s: The string to extract JSON from
+            
+        Returns:
+            The extracted JSON string
+        """
         s = s.strip()
-        # find first '{' and last '}' to isolate JSON
-        start = s.find("{")
-        end = s.rfind("}")
+        start = s.find('{')
+        end = s.rfind('}')
         if start != -1 and end != -1 and end > start:
             debug_print(f"Extracting JSON from position {start} to {end+1}")
-            return s[start : end + 1]
+            return s[start:end+1]
         debug_print("Could not find valid JSON markers, returning original string")
         return s
 
     def fix_escaping(json_str: str) -> str:
-        # Fix common escaping issues in JSON strings from LLMs
-        import json
-        import re
-
+        """Fix common escaping issues in JSON strings from LLMs.
+        
+        Args:
+            json_str: The JSON string to fix
+            
+        Returns:
+            The fixed JSON string
+        """
         original = json_str
-
+        
         debug_print("Original JSON string length:", len(json_str))
-
-        if "]" not in json_str and json_str.count("{") > json_str.count("}"):
-            json_str += "}]}"
+        
+        if ']' not in json_str and json_str.count('{') > json_str.count('}'):
+            json_str += '}]}'
             debug_print("Added missing brackets at the end")
-
-        if "{{" in json_str or "}}" in json_str:
-            json_str = json_str.replace("{{", "{").replace("}}", "}")
+        
+        if '{{' in json_str or '}}' in json_str:
+            json_str = json_str.replace('{{', '{').replace('}}', '}')
             debug_print("Fixed nested braces in code")
-
-        if "HandleFunc=" in json_str:
-            json_str = json_str.replace("HandleFunc=", "HandleFunc(")
+        
+        if 'HandleFunc=' in json_str:
+            json_str = json_str.replace('HandleFunc=', 'HandleFunc(')
             debug_print("Fixed HandleFunc syntax")
-
-        # Fix improperly escaped quotes in JSON
-        # This is a common issue with LLM-generated JSON
+        
         try:
-            # First attempt to find and fix content field with improper escaping
             content_match = re.search(
-                r'"content"\s*:\s*"(.*?)(?:"\s*}|\s*$)', json_str, re.DOTALL
+                r'"content"\s*:\s*"(.*?)(?:"\s*}|\s*$)',
+                json_str,
+                re.DOTALL
             )
             if content_match:
                 content = content_match.group(1)
                 debug_print("Found content field with length:", len(content))
-
-                # Fix escaped quotes and newlines
-                content = content.replace('\\"', '"').replace("\\n", "\n")
-
-                # Fix Go-specific issues
-                if ".go" in json_str:
-                    # Fix import statements
+                
+                content = content.replace('\\"', '"').replace('\\n', '\n')
+                
+                if '.go' in json_str:
                     content = re.sub(
-                        r'import\s*\(\\"([^"]+)\\"\)', r'import ("\1")', content
+                        r'import\s*\(\\"([^"]+)\\"\)',
+                        r'import ("\1")',
+                        content
                     )
-                    # Fix function calls
-                    content = re.sub(r'(\w+)\(\\"([^"]+)\\"\)', r'\1("\2")', content)
-                    # Fix map declarations
                     content = re.sub(
-                        r"map\[string\]string\{([^}]+)\}",
-                        r"map[string]string{\1}",
-                        content,
+                        r'(\w+)\(\\"([^"]+)\\"\)',
+                        r'\1("\2")',
+                        content
                     )
-
-                # Replace the content in the JSON
+                    content = re.sub(
+                        r'map\[string\]string\{([^}]+)\}',
+                        r'map[string]string{\1}',
+                        content
+                    )
+                
                 json_str = re.sub(
                     r'"content"\s*:\s*"(.*?)(?:"\s*}|\s*$)',
                     lambda m: m.group(0).replace(m.group(1), content),
                     json_str,
-                    flags=re.DOTALL,
+                    flags=re.DOTALL
                 )
                 debug_print("Fixed content field escaping")
         except Exception as e:
             debug_print(f"Error while trying to fix content field: {str(e)}")
-
-        # Fix common string escaping issues in content
-        if "content" in json_str:
-            # Handle newline escaping for JSON
-            if "\\\\n" in json_str:
-                # Already double escaped, which is correct for JSON
+        
+        if 'content' in json_str:
+            if '\\\\n' in json_str:
                 pass
-            elif "\\n" in json_str:
-                # Need to re-escape for JSON
-                json_str = json_str.replace("\\n", "\\\\n")
+            elif '\\n' in json_str:
+                json_str = json_str.replace('\\n', '\\\\n')
                 debug_print("Re-escaped newlines for JSON")
-
-        # Fix unbalanced quotes in content strings
+        
         content_match = re.search(
-            r'"content"\s*:\s*"(.*?)(?:"\s*}|\s*$)', json_str, re.DOTALL
+            r'"content"\s*:\s*"(.*?)(?:"\s*}|\s*$)',
+            json_str,
+            re.DOTALL
         )
         if content_match:
             content = content_match.group(1)
             debug_print("Found content field with length:", len(content))
-
-            # Count backslashes before quotes to identify escaped quotes
+            
             count_escaped = content.count('\\"')
             count_unescaped = content.count('"') - count_escaped
-
-            debug_print(
-                f"Quote counts: escaped={count_escaped}, unescaped={count_unescaped}"
-            )
-
-            # If we have unbalanced quotes, try to fix them
+            
+            debug_print(f"Quote counts: escaped={count_escaped}, unescaped={count_unescaped}")
+            
             if count_unescaped % 2 != 0:
                 debug_print("Detected unbalanced quotes, attempting to fix")
-                # Find the last quote that's not escaped and add closing quotes as needed
-                last_idx = json_str.rfind('"', 0, json_str.rfind("}"))
+                last_idx = json_str.rfind('"', 0, json_str.rfind('}'))
                 if last_idx > 0:
                     json_str = json_str[:last_idx] + '"' + json_str[last_idx:]
                     debug_print(f"Added missing quote at position {last_idx}")
-
-        # Check if we've made any changes
+        
         if json_str != original:
             debug_print("JSON string was modified for parsing")
-
+        
         return json_str
 
     debug_print(f"Raw LLM response length: {len(text)}")

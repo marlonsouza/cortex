@@ -1,5 +1,3 @@
-"""
-Cortex - AI assistant for project scaffolding
-"""
+"""Cortex package initialization."""
 
 __version__ = "0.1.0"

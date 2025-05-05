@@ -1,8 +1,6 @@
 """Test cases for the Cortex agent."""
 
-import pytest
-
-from cortex.utils import clean_content, clean_path
+from cortex.utils import clean_path, clean_content
 
 
 def test_clean_path():
@@ -15,7 +13,7 @@ def test_clean_path():
 
 def test_clean_content():
     """Test content cleaning functionality."""
-    assert clean_content("hello world") == "hello world"
+    assert clean_content('hello world') == 'hello world'
     assert clean_content('hello \\"world\\"') == 'hello "world"'
-    assert clean_content("hello\\nworld") == "hello\nworld"
+    assert clean_content('hello\\nworld') == 'hello\nworld'
     assert clean_content('import (\\"fmt\\")') == 'import ("fmt")'
