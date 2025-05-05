@@ -28,4 +28,4 @@ setup(
             "cortex=cortex.agent:main",
         ],
     },
-) 
+)
