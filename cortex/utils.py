@@ -1,8 +1,8 @@
 """Utility functions for Cortex."""
 
 import os
-import re
 import pathlib
+import re
 
 
 def clean_path(path: str) -> str:

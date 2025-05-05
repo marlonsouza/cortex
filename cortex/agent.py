@@ -1,14 +1,15 @@
 """Cortex Agent - Main agent implementation for project scaffolding"""
 
-import os
 import asyncio
-import logging
-import aiohttp
 import json
+import logging
+import os
 import pathlib
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
-from cortex.utils import clean_path, clean_content
+import aiohttp
+
+from cortex.utils import clean_content, clean_path
 
 # Configure enhanced logging
 logging.basicConfig(
@@ -88,10 +89,10 @@ DEBUG = get_config("DEBUG", "false", env_vars).lower() in ["true", "1", "yes", "
 
 # Start Context7 MCP server if enabled
 if CONTEXT7_ENABLED:
+    import atexit
+    import signal
     import subprocess
     import time
-    import signal
-    import atexit
 
     # Function to start Context7 MCP server
     def start_context7_server():
@@ -375,8 +376,8 @@ class MCPClient:
 client = MCPClient(model=MCP_MODEL)
 
 if __name__ == "__main__":
-    import json
     import argparse
+    import json
 
     # Set up command line argument parser
     parser = argparse.ArgumentParser(
@@ -566,8 +567,8 @@ if __name__ == "__main__":
 
     def fix_escaping(json_str: str) -> str:
         # Fix common escaping issues in JSON strings from LLMs
-        import re
         import json
+        import re
 
         original = json_str
 

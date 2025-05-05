@@ -1,7 +1,8 @@
 """Test cases for the Cortex agent."""
 
 import pytest
-from cortex.utils import clean_path, clean_content
+
+from cortex.utils import clean_content, clean_path
 
 
 def test_clean_path():
