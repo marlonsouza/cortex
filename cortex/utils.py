@@ -1,7 +1,6 @@
 """Utility functions for Cortex."""
 
 import re
-from typing import Dict, Optional, Any
 
 
 def clean_path(path: str) -> str:
