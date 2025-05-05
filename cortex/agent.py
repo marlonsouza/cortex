@@ -169,10 +169,15 @@ if CONTEXT7_ENABLED:
                 try:
                     # Try to connect to server
                     import urllib.request
+
                     urllib.request.urlopen(server_url, timeout=1)
                     print("Context7 MCP server started successfully")
                     return True
-                except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
+                except (
+                    urllib.error.URLError,
+                    urllib.error.HTTPError,
+                    TimeoutError,
+                ) as e:
                     time.sleep(1)
 
             print("Timed out waiting for Context7 server to start")
@@ -290,15 +295,9 @@ class MCPClient:
                         )
                         else "user"
                     )
-                formatted_messages.append({
-                    "role": role,
-                    "content": msg.content
-                })
+                formatted_messages.append({"role": role, "content": msg.content})
 
-            self.is_ollama = (
-                "ollama" in self.api_url.lower()
-                or "11434" in self.api_url
-            )
+            self.is_ollama = "ollama" in self.api_url.lower() or "11434" in self.api_url
 
             if self.is_ollama:
                 payload = {
@@ -326,7 +325,7 @@ class MCPClient:
                         if base_url.endswith("/api"):
                             endpoint = f"{base_url}/chat"
                         else:
-                            base = base_url.split('/api')[0]
+                            base = base_url.split("/api")[0]
                             endpoint = f"{base}/api/chat"
                     else:
                         endpoint = f"{base_url}/api/chat"
@@ -334,7 +333,7 @@ class MCPClient:
                     if "/api/chat" in base_url:
                         endpoint = base_url
                     elif "/api" in base_url:
-                        base = base_url.rstrip('/api')
+                        base = base_url.rstrip("/api")
                         endpoint = f"{base}/api/chat"
                     else:
                         endpoint = f"{base_url}/api/chat"
@@ -342,15 +341,15 @@ class MCPClient:
                 if "localhost" in base_url or "127.0.0.1" in base_url:
                     try:
                         url_parts = (
-                            base_url.split("://")[1]
-                            if "://" in base_url
+                            base_url.split("://")[1] 
+                            if "://" in base_url 
                             else base_url
                         )
                         host_part = url_parts.split("/")[0]
                         self.backup_endpoint = (
                             f"http://{host_part}/api/chat"
                         )
-                    except:
+                    except Exception:
                         self.backup_endpoint = (
                             "http://localhost:11434/api/chat"
                         )
@@ -409,39 +408,29 @@ class MCPClient:
                                 break
                             else:
                                 error_text = await response.text()
-                                error_msg = (
-                                    "API Error: HTTP {} from {} - {}".format(
-                                        response.status,
-                                        current_endpoint,
-                                        error_text
-                                    )
+                                error_msg = "API Error: HTTP {} from {} - {}".format(
+                                    response.status, current_endpoint, error_text
                                 )
                                 logging.warning(error_msg)
                                 error_messages.append(error_msg)
                                 retry_count += 1
                     except aiohttp.ClientError as e:
-                        error_msg = (
-                            "Connection error with {}: {}".format(
-                                current_endpoint, str(e)
-                            )
+                        error_msg = "Connection error with {}: {}".format(
+                            current_endpoint, str(e)
                         )
                         logging.warning(error_msg)
                         error_messages.append(error_msg)
                         retry_count += 1
                     except asyncio.TimeoutError:
-                        error_msg = (
-                            "Timeout connecting to {} after {}s".format(
-                                current_endpoint, self.timeout
-                            )
+                        error_msg = "Timeout connecting to {} after {}s".format(
+                            current_endpoint, self.timeout
                         )
                         logging.warning(error_msg)
                         error_messages.append(error_msg)
                         retry_count += 1
                     except Exception as e:
-                        error_msg = (
-                            "Unexpected error with {}: {}".format(
-                                current_endpoint, str(e)
-                            )
+                        error_msg = "Unexpected error with {}: {}".format(
+                            current_endpoint, str(e)
                         )
                         logging.warning(error_msg)
                         error_messages.append(error_msg)
